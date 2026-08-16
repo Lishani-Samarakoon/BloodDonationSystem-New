@@ -1,0 +1,16 @@
+:root {
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  color: #1f2937;
+  background: #f3f4f6;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --red: #b91c1c;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; min-height: 100vh; background: radial-gradient(circle at top left, rgba(185,28,28,.08), transparent 32%), #f3f4f6; }
+button,input,select,textarea { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+#root { min-height: 100vh; }
+code { background: #e5e7eb; border-radius: 5px; padding: 1px 5px; }

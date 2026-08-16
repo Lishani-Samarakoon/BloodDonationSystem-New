@@ -1,0 +1,168 @@
+services:
+  mysql-auth:
+    image: mysql:8.0
+    container_name: blooddonation-auth-db
+    environment:
+      MYSQL_DATABASE: auth_db
+      MYSQL_ROOT_PASSWORD: ${AUTH_DB_PASSWORD:-root123}
+    ports:
+      - "3307:3306"
+    volumes:
+      - auth-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${AUTH_DB_PASSWORD:-root123}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mysql-donation:
+    image: mysql:8.0
+    container_name: blooddonation-donation-db
+    environment:
+      MYSQL_DATABASE: donation_db
+      MYSQL_ROOT_PASSWORD: ${DONATION_DB_PASSWORD:-root123}
+    ports:
+      - "3308:3306"
+    volumes:
+      - donation-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DONATION_DB_PASSWORD:-root123}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mysql-bloodbank:
+    image: mysql:8.0
+    container_name: blooddonation-bloodbank-db
+    environment:
+      MYSQL_DATABASE: bloodbank_db
+      MYSQL_ROOT_PASSWORD: ${BLOODBANK_DB_PASSWORD:-root123}
+    ports:
+      - "3309:3306"
+    volumes:
+      - bloodbank-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${BLOODBANK_DB_PASSWORD:-root123}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: blooddonation-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    container_name: blooddonation-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
+      KC_HTTP_PORT: 8180
+    ports:
+      - "8180:8180"
+    volumes:
+      - ./keycloak/realm-config:/opt/keycloak/data/import:ro
+
+  auth-service:
+    build:
+      context: ./auth-service
+    container_name: blooddonation-auth-service
+    depends_on:
+      mysql-auth:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql-auth:3306/auth_db
+      DB_USERNAME: root
+      DB_PASSWORD: ${AUTH_DB_PASSWORD:-root123}
+      APP_API_KEY: ${AUTH_SERVICE_API_KEY:-auth-service-secret-key}
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+
+  donation-service:
+    build:
+      context: ./donation-service
+    container_name: blooddonation-donation-service
+    depends_on:
+      mysql-donation:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql-donation:3306/donation_db
+      DB_USERNAME: root
+      DB_PASSWORD: ${DONATION_DB_PASSWORD:-root123}
+      APP_API_KEY: ${DONATION_SERVICE_API_KEY:-donation-service-secret-key}
+      SERVER_PORT: 8082
+    ports:
+      - "8082:8082"
+
+  bloodbank-service:
+    build:
+      context: ./bloodbank-service
+    container_name: blooddonation-bloodbank-service
+    depends_on:
+      mysql-bloodbank:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql-bloodbank:3306/bloodbank_db
+      DB_USERNAME: root
+      DB_PASSWORD: ${BLOODBANK_DB_PASSWORD:-root123}
+      APP_API_KEY: ${BLOODBANK_SERVICE_API_KEY:-bloodbank-service-secret-key}
+      SERVER_PORT: 8083
+    ports:
+      - "8083:8083"
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: blooddonation-api-gateway
+    depends_on:
+      auth-service:
+        condition: service_started
+      donation-service:
+        condition: service_started
+      bloodbank-service:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8081
+      AUTH_SERVICE_API_KEY: ${AUTH_SERVICE_API_KEY:-auth-service-secret-key}
+      DONATION_SERVICE_URL: http://donation-service:8082
+      DONATION_SERVICE_API_KEY: ${DONATION_SERVICE_API_KEY:-donation-service-secret-key}
+      BLOODBANK_SERVICE_URL: http://bloodbank-service:8083
+      BLOODBANK_SERVICE_API_KEY: ${BLOODBANK_SERVICE_API_KEY:-bloodbank-service-secret-key}
+      OAUTH_ISSUER: http://localhost:8180/realms/blood-donation
+      OAUTH_JWK_SET_URI: http://keycloak:8180/realms/blood-donation/protocol/openid-connect/certs
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RATE_LIMIT_MAX_REQUESTS: 20
+      RATE_LIMIT_WINDOW_SECONDS: 10
+      FRONTEND_ORIGIN: http://localhost:5173
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: blooddonation-frontend
+    depends_on:
+      - api-gateway
+      - keycloak
+    ports:
+      - "5173:80"
+
+volumes:
+  auth-db-data:
+  donation-db-data:
+  bloodbank-db-data:
