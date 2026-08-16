@@ -1,742 +1,314 @@
 # Blood Donation Management System
 
-A **microservices-based Blood Donation Management System** developed using Spring Boot, React, Spring Cloud Gateway, Keycloak, Redis, Docker, and Docker Compose.
+A Service-Oriented Computing group project implemented with Spring Boot microservices, a Spring Cloud API Gateway, Keycloak OAuth2/OpenID Connect, Redis rate limiting, MySQL databases, React, Swagger/OpenAPI, Docker, and Docker Compose.
 
-The system provides a centralized platform for managing users, blood donations, blood banks, blood stocks, and blood requests while applying authentication, API security, service routing, rate limiting, and containerized deployment.
-
----
-## Project Links
-
-| Resource | Link |
-|---|---|
-| GitHub Repository | [Blood Donation Management System](https://github.com/Lishani-Samarakoon/BloodDonationSystem-New) |
-| Frontend Application | [http://localhost:5173](http://localhost:5173) |
-| Keycloak | [http://localhost:8180](http://localhost:8180) |
-| Auth Service Swagger | [http://localhost:8081/swagger-ui/index.html](http://localhost:8081/swagger-ui/index.html) |
-| Donation Service Swagger | [http://localhost:8082/swagger-ui/index.html](http://localhost:8082/swagger-ui/index.html) |
-| Blood Bank Service Swagger | [http://localhost:8083/swagger-ui/index.html](http://localhost:8083/swagger-ui/index.html) |
-
-----
-## Team Members
-
-| Member | Index Number | Main Contribution |
-|---|---|---|
-| Lishani Samarakoon | **ITBIN-2312-0005** | User/Auth & Security |
-| Wathsala Kithulgala | **ITBIN-2312-0025** | Donation Management |
-| Seshan Sandeepa | **ITBIN-2312-0024** | Blood Bank Management |
-
----
-
-## Table of Contents
-
-1. [Project Overview](#1-project-overview)
-2. [Objectives](#2-objectives)
-3. [System Architecture](#3-system-architecture)
-4. [Main Features](#4-main-features)
-5. [Technologies Used](#5-technologies-used)
-6. [Microservices](#6-microservices)
-7. [Security](#7-security)
-8. [Project Structure](#8-project-structure)
-9. [Installation and Setup](#9-installation-and-setup)
-10. [Running the System](#10-running-the-system)
-11. [Testing](#11-testing)
-12. [Team Contributions](#12-team-contributions)
-13. [Git and GitHub Workflow](#13-git-and-github-workflow)
-14. [Additional Documentation](#14-additional-documentation)
-15. [Project Status](#15-project-status)
-16. [License](#16-license)
-
----
-
-# 1. Project Overview
-
-The **Blood Donation Management System** is designed using a microservices architecture.
-
-Instead of developing the entire system as one application, the main business functions are separated into independent backend services.
-
-The main services are:
-
-- User/Auth Service
-- Donation Service
-- Blood Bank Service
-- API Gateway
-- React Frontend
-- Keycloak Authentication
-- Redis-based rate limiting
-
-The system allows users to securely manage blood donation-related activities while keeping each service independent and easier to maintain.
-
----
-
-# 2. Objectives
-
-The main objectives of the project are to:
-
-- Develop a microservices-based blood donation management platform.
-- Manage users securely.
-- Manage blood donation records.
-- Manage blood banks.
-- Manage blood stocks.
-- Manage blood requests.
-- Apply authentication and authorization.
-- Protect individual microservices using API keys.
-- Provide a centralized API Gateway.
-- Implement API rate limiting using Redis.
-- Provide a user-friendly React frontend.
-- Containerize the full system using Docker.
-- Perform API and integration testing.
-- Apply Git and GitHub collaboration using separate feature branches.
-
----
-
-# 3. System Architecture
+## Architecture
 
 ```text
-                         ┌─────────────────────┐
-                         │    React Frontend   │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │     API Gateway     │
-                         └──────────┬──────────┘
-                                    │
-                 ┌──────────────────┼──────────────────┐
-                 │                  │                  │
-                 ▼                  ▼                  ▼
-        ┌────────────────┐ ┌────────────────┐ ┌─────────────────┐
-        │  Auth Service  │ │Donation Service│ │ Blood Bank      │
-        │                │ │                │ │ Service         │
-        └────────────────┘ └────────────────┘ └─────────────────┘
-                 │                  │                  │
-                 └──────────────────┴──────────────────┘
-                                    │
-                     ┌──────────────┴─────────────┐
-                     │                            │
-                     ▼                            ▼
-              ┌─────────────┐              ┌─────────────┐
-              │  Keycloak   │              │    Redis    │
-              │ Auth/Security│             │Rate Limiting│
-              └─────────────┘              └─────────────┘
+React Client :5173
+       |
+       | OAuth2 Bearer Token
+       v
+API Gateway :8080
+  - JWT validation
+  - Keycloak realm roles
+  - CORS
+  - Redis rate limiting
+  - internal API-key injection
+       |
+       +----------------+----------------+
+       |                |                |
+       v                v                v
+User/Auth :8081   Donation :8082   Blood Bank :8083
+       |                |                |
+       v                v                v
+    auth_db        donation_db       bloodbank_db
+
+Keycloak :8180                 Redis :6379
+OAuth2 / OpenID Connect        Rate-limit counters
 ```
 
-The API Gateway acts as the main entry point for frontend requests and routes each request to the correct backend microservice.
+The frontend never sends a service API key. It authenticates with Keycloak and sends an OAuth2 access token to the Gateway. The Gateway validates the token, applies authorization/rate limiting, removes any client-supplied `X-API-KEY`, adds the correct internal service key, and forwards the request.
 
----
+## Main components
 
-# 4. Main Features
+### User/Auth Service — port 8081
 
-## 4.1 User and Authentication Management
+Manages application user profiles.
 
-- Create users
-- View users
-- Update user information
-- Delete users
-- User validation
-- Exception handling
-- API-key protection
-- Authentication using Keycloak
-- OAuth2/JWT-based security
+- `POST /api/users`
+- `GET /api/users`
+- `GET /api/users/{id}`
+- `PUT /api/users/{id}`
+- `DELETE /api/users/{id}`
+- MySQL database: `auth_db`
+- Internal key header: `X-API-KEY`
+- Swagger: `http://localhost:8081/swagger-ui.html`
 
----
+### Donation Service — port 8082
 
-## 4.2 Donation Management
+Manages donor availability and donation records.
 
-- Create blood donations
-- View donation records
-- Update donations
-- Delete donations
-- Search donations
-- Search by donor
-- Search by blood group
-- Search by donation status
-- Update donation status
-- Quantity validation
-- Date validation
-- Exception handling
-- API-key protection
+- `POST /api/donations`
+- `GET /api/donations`
+- `GET /api/donations/{id}`
+- `GET /api/donations/donor/{donorId}`
+- `GET /api/donations/blood-group/{bloodGroup}`
+- `GET /api/donations/status/{status}`
+- `GET /api/donations/search`
+- `PUT /api/donations/{id}`
+- `PATCH /api/donations/{id}/status`
+- `DELETE /api/donations/{id}`
+- MySQL database: `donation_db`
+- Swagger: `http://localhost:8082/swagger-ui.html`
 
----
+Donation validation includes a valid blood group, positive quantity, and an availability date that is today or later.
 
-## 4.3 Blood Bank Management
+### Blood Bank Service — port 8083
 
-- Create blood banks
-- View blood banks
-- Update blood bank information
-- Delete blood banks
-- Manage blood stock
-- Create blood stock records
-- Update blood stock
-- Delete blood stock
-- Manage blood requests
-- Create blood requests
-- Update blood request status
-- Delete blood requests
-- Validation and exception handling
+Manages blood banks, blood stock, and blood requests.
 
----
+Blood banks:
 
-## 4.4 Frontend
+- `POST /api/bloodbanks`
+- `GET /api/bloodbanks`
+- `GET /api/bloodbanks/{id}`
+- `PUT /api/bloodbanks/{id}`
+- `DELETE /api/bloodbanks/{id}`
 
-The React frontend provides interfaces for:
+Blood stock:
 
-- User authentication
-- User management
-- Donation management
-- Blood Bank management
-- Blood Stock management
-- Blood Request management
-- Status management
-- Dashboard information
+- `POST /api/bloodstocks`
+- `GET /api/bloodstocks`
+- `GET /api/bloodstocks/{id}`
+- `GET /api/bloodstocks/blood-bank/{bloodBankId}`
+- `GET /api/bloodstocks/blood-group/{bloodGroup}`
+- `PUT /api/bloodstocks/{id}`
+- `DELETE /api/bloodstocks/{id}`
 
----
+Blood requests:
 
-## 4.5 API Gateway
+- `POST /api/bloodrequests`
+- `GET /api/bloodrequests`
+- `GET /api/bloodrequests/{id}`
+- `GET /api/bloodrequests/blood-bank/{bloodBankId}`
+- `PUT /api/bloodrequests/{id}`
+- `PATCH /api/bloodrequests/{id}/status`
+- `DELETE /api/bloodrequests/{id}`
 
-The API Gateway provides:
+MySQL database: `bloodbank_db`
 
-- Centralized access to backend services
-- Service routing
-- Authentication integration
-- OAuth2/JWT handling
-- API-key forwarding
-- CORS configuration
-- Redis-based rate limiting
+Swagger: `http://localhost:8083/swagger-ui.html`
 
----
+## API Gateway security
 
-# 5. Technologies Used
+Gateway URL: `http://localhost:8080`
 
-| Technology | Purpose |
-|---|---|
-| Java | Backend development |
-| Spring Boot | Microservice development |
-| Spring Cloud Gateway | API Gateway |
-| React | Frontend development |
-| Vite | Frontend development and build tool |
-| Keycloak | Authentication and authorization |
-| OAuth2 / JWT | Secure access |
-| Redis | API rate limiting |
-| Docker | Containerization |
-| Docker Compose | Running multiple services together |
-| Maven | Java dependency management |
-| Swagger / OpenAPI | REST API documentation |
-| Git | Version control |
-| GitHub | Team collaboration |
-| PowerShell | Automated smoke testing |
+### Authentication
 
----
-
-# 6. Microservices
-
-## 6.1 Auth Service
-
-The Auth Service manages user-related functionality.
-
-### Main Responsibilities
-
-- User entity management
-- User CRUD REST APIs
-- User validation
-- Exception handling
-- Service-specific API-key security
-- Swagger/OpenAPI documentation
-
----
-
-## 6.2 Donation Service
-
-The Donation Service manages blood donation records.
-
-### Main Responsibilities
-
-- Donation creation
-- Donation retrieval
-- Donation updates
-- Donation deletion
-- Donation search
-- Blood group filtering
-- Donor filtering
-- Status filtering
-- Donation status management
-- Quantity validation
-- Date validation
-- Exception handling
-- Service-specific API-key security
-- Swagger/OpenAPI documentation
-
----
-
-## 6.3 Blood Bank Service
-
-The Blood Bank Service manages Blood Bank operations.
-
-### Main Responsibilities
-
-- Blood Bank CRUD
-- Blood Stock management
-- Blood Request management
-- Request status management
-- Validation
-- Exception handling
-- Service-specific API-key security
-- Swagger/OpenAPI documentation
-
----
-
-## 6.4 API Gateway
-
-The API Gateway provides a common entry point for communication between the frontend and backend services.
-
-### Responsibilities
-
-- Route requests to appropriate services
-- Handle authentication-related access
-- Forward service API keys
-- Apply CORS configuration
-- Apply Redis-based rate limiting
-
----
-
-# 7. Security
-
-The project uses multiple security mechanisms.
-
-## 7.1 Keycloak
-
-Keycloak is used for:
-
-- User authentication
-- Token generation
-- OAuth2 integration
-- JWT-based access control
-
-The project contains Keycloak configuration under:
+Protected `/api/**` requests require a JWT access token issued by the `blood-donation` Keycloak realm.
 
 ```text
-keycloak/realm-config/
+Authorization: Bearer <access-token>
 ```
 
----
+### Role-based authorization
 
-## 7.2 API-Key Security
+Keycloak realm roles are mapped to Spring Security roles.
 
-Individual backend services are protected using service-specific API keys.
+- `DONOR` or `ADMIN`: create/update/delete donations
+- `BLOOD_BANK` or `ADMIN`: create/update/delete blood banks, stock, and blood requests
+- `ADMIN`: delete user profiles
+- Authenticated users can read the system data required by the client
 
-Protected requests use the header:
+### Internal service API keys
+
+Each microservice has a separate internal key. The Gateway injects the correct key automatically.
+
+For direct Swagger/manual service testing only:
 
 ```text
-X-API-KEY
+Auth:       auth-service-secret-key
+Donation:   donation-service-secret-key
+Blood Bank: bloodbank-service-secret-key
 ```
 
-This prevents unauthorized direct access to protected microservice endpoints.
+These are local development defaults. They can be changed with environment variables or a local `.env` file.
 
----
+### CORS
 
-## 7.3 API Gateway Security
-
-The API Gateway provides centralized access to backend services and integrates the required authentication and routing rules.
-
----
-
-## 7.4 CORS
-
-CORS configuration allows the frontend and backend components to communicate correctly while controlling cross-origin requests.
-
----
-
-## 7.5 Redis Rate Limiting
-
-Redis is used to control excessive API requests through rate limiting.
-
-This helps protect the application from request abuse and unnecessary traffic.
-
----
-
-# 8. Project Structure
+The Gateway allows the React client origin:
 
 ```text
-BloodDonationSystem-New/
-│
-├── api-gateway/
-│
-├── auth-service/
-│
-├── bloodbank-service/
-│
-├── donation-service/
-│
-├── frontend/
-│
-├── keycloak/
-│   └── realm-config/
-│
-├── scripts/
-│   └── smoke-test.ps1
-│
-├── .env.example
-├── .gitignore
-├── docker-compose.yml
-├── FIXES_APPLIED.md
-├── LICENSE
-├── README.md
-├── TEAM_GIT_GUIDE.md
-└── TESTING_GUIDE.md
+http://localhost:5173
 ```
 
----
+### Redis rate limiting
 
-# 9. Installation and Setup
+Business API requests are limited per client IP using Redis.
 
-## 9.1 Prerequisites
+Default development values:
 
-Install the following software before running the project:
+```text
+20 requests / 10 seconds
+```
 
-- Git
-- Java JDK 21
-- Maven
-- Node.js
+Requests above the limit receive:
+
+```text
+HTTP 429 Too Many Requests
+```
+
+## Keycloak
+
+Realm:
+
+```text
+blood-donation
+```
+
+Frontend client:
+
+```text
+blood-donation-frontend
+```
+
+The browser login uses the OAuth2 Authorization Code flow with PKCE (S256).
+
+Demo users:
+
+| Role | Username | Password |
+| --- | --- | --- |
+| Donor | `donor1` | `donor123` |
+| Blood Bank | `bank1` | `bank123` |
+| Admin | `admin1` | `admin123` |
+
+Keycloak admin console:
+
+```text
+http://localhost:8180
+```
+
+Default local admin:
+
+```text
+admin / admin123
+```
+
+A second client named `blood-donation-test-client` enables the local automated smoke-test script to obtain a test token. It is for local assignment testing only and is not used by the frontend.
+
+## Frontend
+
+Frontend URL:
+
+```text
+http://localhost:5173
+```
+
+The frontend now uses real Gateway APIs rather than hard-coded dashboard values. It includes:
+
+- Keycloak login/logout
+- OAuth2 token handling and refresh
+- Live dashboard metrics
+- User profile creation/listing
+- Donation creation/listing/status management/deletion
+- Blood bank creation/listing/deletion
+- Blood stock creation/listing/deletion
+- Blood request creation/listing/status management/deletion
+- Role-aware controls
+
+## Run the complete project with Docker
+
+### Prerequisites
+
 - Docker Desktop
+- Git
 
----
+From the project root:
 
-## 9.2 Clone the Repository
-
-```bash
-git clone https://github.com/Lishani-Samarakoon/BloodDonationSystem-New.git
+```powershell
+docker compose up --build
 ```
 
-Move into the project:
+The stack contains:
 
-```bash
-cd BloodDonationSystem-New
+- `mysql-auth`
+- `mysql-donation`
+- `mysql-bloodbank`
+- `redis`
+- `keycloak`
+- `auth-service`
+- `donation-service`
+- `bloodbank-service`
+- `api-gateway`
+- `frontend`
+
+After startup, open:
+
+```text
+http://localhost:5173
 ```
 
----
+To stop the project:
 
-## 9.3 Environment Configuration
+```powershell
+docker compose down
+```
 
-The repository contains:
+To also remove database volumes and start with empty databases:
+
+```powershell
+docker compose down -v
+```
+
+## Optional environment configuration
+
+Copy:
 
 ```text
 .env.example
 ```
 
-This file provides an example of the environment variables required by the project.
-
-Create the required local environment configuration based on this file.
-
-> Do not commit real passwords, tokens, API keys, or private credentials to GitHub.
-
----
-
-# 10. Running the System
-
-The easiest way to run the complete application is through Docker Compose.
-
-## Start the System
-
-From the project root directory:
-
-```bash
-docker compose up --build
-```
-
-Docker will build and start the required application containers.
-
----
-
-## Stop the System
-
-```bash
-docker compose down
-```
-
----
-
-## Rebuild After Code Changes
-
-```bash
-docker compose up --build
-```
-
----
-
-## Check Running Containers
-
-```bash
-docker compose ps
-```
-
-The effective service ports and container configuration can be reviewed in:
+to:
 
 ```text
-docker-compose.yml
+.env
 ```
 
----
+and change the local database passwords/API keys if required. `.env` is ignored by Git.
 
-# 11. Testing
+## Automated smoke testing
 
-The project includes integration/smoke testing through:
-
-```text
-scripts/smoke-test.ps1
-```
-
-Make sure Docker Compose is already running before starting the test.
-
-Run:
+After the Docker stack is running, open a second PowerShell window in the project root:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\smoke-test.ps1
 ```
 
-The smoke test checks important operations such as:
-
-- Service availability
-- API-key security
-- Authentication-related functionality
-- User operations
-- Donation creation
-- Donation retrieval
-- Invalid donation validation
-- Unknown donation handling
-- Blood Bank creation
-- Blood Stock creation
-- Blood Request creation
-- Donation status updates
-- Blood Request status updates
-- Redis rate limiting
-- Delete operations
-- Service integration
-
-A successful execution displays:
-
-```text
-All smoke tests passed successfully.
-```
-
----
-
-# 12. Team Contributions
-
-The project was completed by three members using separate Git branches and Pull Requests.
-
----
-
-## Member 1 – Lishani Samarakoon
-
-**Index Number:** `ITBIN-2312-0005`  
-**GitHub:** `Lishani-Samarakoon`  
-**Branch:** `feature/user-auth-security`
-
-### Main Contribution: User/Auth & Security
-
-- User/Auth Service
-- User entity implementation
-- User CRUD REST APIs
-- User validation
-- Exception handling
-- Service-specific API-key security
-- Swagger/OpenAPI documentation
-- Keycloak realm configuration
-- User/Auth API testing
-- Security-related backend functionality
-
----
-
-## Member 2 – Wathsala Kithulgala
-
-**Index Number:** `ITBIN-2312-0025`  
-**GitHub:** `wathsala2001`  
-**Branch:** `feature/donation-management`
-
-### Main Contribution: Donation Management
-
-- Donation entity implementation
-- Donation CRUD REST APIs
-- Donation search functionality
-- Search by donor
-- Search by blood group
-- Search by donation status
-- Donation status management
-- Quantity validation
-- Date validation
-- Exception handling
-- Service-specific API-key security
-- Swagger/OpenAPI documentation
-- Donation API testing
-- Donation integration testing
-
----
-
-## Member 3 – Seshan Sandeepa
-
-**Index Number:** `ITBIN-2312-0024`  
-**GitHub:** `seshansandeepa`  
-**Branch:** `feature/bloodbank-infrastructure`
-
-### Main Contribution: Blood Bank Management
-
-- Blood Bank entity implementation
-- Blood Bank CRUD REST APIs
-- Blood Stock management
-- Blood Stock operations
-- Blood Request management
-- Blood Request status management
-- Validation
-- Exception handling
-- Service-specific API-key security
-- Swagger/OpenAPI documentation
-- Blood Bank API testing
-- Blood Bank integration testing
-
----
-
-## Shared Group Integration
-
-The following components were integrated as shared group work:
-
-- React frontend
-- API Gateway
-- Service routing
-- OAuth2/JWT integration
-- CORS configuration
-- Service API-key forwarding
-- Docker Compose
-- Redis configuration
-- Rate limiting
-- Integration testing
-- Smoke testing
-- Final documentation
-
-The final integration was completed using:
-
-```text
-integration/final-project
-```
-
----
-
-# 13. Git and GitHub Workflow
-
-The team used separate Git feature branches to maintain clear individual contribution records.
-
-| Member / Purpose | Branch |
-|---|---|
-| Lishani – User/Auth & Security | `feature/user-auth-security` |
-| Wathsala – Donation Management | `feature/donation-management` |
-| Seshan – Blood Bank Management | `feature/bloodbank-infrastructure` |
-| Final Group Integration | `integration/final-project` |
-
-The development workflow was:
-
-```text
-Individual Development
-        ↓
-Feature Branch
-        ↓
-Commit
-        ↓
-Push to GitHub
-        ↓
-Pull Request
-        ↓
-Review / Merge
-        ↓
-Main Branch
-        ↓
-Final Group Integration
-```
-
-This workflow allows individual contributions to remain visible through GitHub commits and Pull Requests.
-
----
-
-# 14. Additional Documentation
-
-Additional project documentation is available in the repository.
-
-## Testing Guide
-
-```text
-TESTING_GUIDE.md
-```
-
-Contains information about project testing.
-
----
-
-## Team Git Guide
-
-```text
-TEAM_GIT_GUIDE.md
-```
-
-Contains information about the team Git/GitHub workflow.
-
----
-
-## Fixes Applied
-
-```text
-FIXES_APPLIED.md
-```
-
-Documents important fixes and improvements made during development.
-
----
-
-## Environment Example
-
-```text
-.env.example
-```
-
-Provides example environment configuration without exposing private credentials.
-
----
-
-# 15. Project Status
-
-| Component | Status |
-|---|---|
-| User/Auth Service |  Complete |
-| Donation Service | Complete |
-| Blood Bank Service | Complete |
-| Blood Stock Management | Complete |
-| Blood Request Management | Complete |
-| API Gateway | Complete |
-| React Frontend | Complete |
-| Keycloak Integration | Complete |
-| OAuth2/JWT Integration | Complete |
-| Service API-key Security | Complete |
-| Redis Rate Limiting | Complete |
-| Docker Compose Integration | Complete |
-| Swagger/OpenAPI | Complete |
-| API Testing | Complete |
-| Smoke Testing | Complete |
-| GitHub Team Integration | Complete |
-
----
-
-# 16. License
-
-This project is licensed under the **MIT License**.
-
-See the following file for details:
-
-```text
-LICENSE
-```
-
----
-
-## Final Project
-
-**Blood Donation Management System**
-
-Developed collaboratively using:
-
-**Spring Boot • React • API Gateway • Keycloak • Redis • Docker • Git • GitHub**
+The script checks authentication, API-key protection, CRUD operations, validation, 404 handling, CORS, status updates, Redis rate limiting, and cleanup.
+
+See [TESTING_GUIDE.md](TESTING_GUIDE.md) for the complete test procedure and report screenshot checklist.
+
+## Technology versions
+
+- Java 21
+- Spring Boot 4.0.7
+- Spring Cloud 2025.1.2
+- Springdoc OpenAPI 3.0.3
+- React 19
+- Vite 8
+- MySQL 8
+- Redis 7.4
+- Keycloak 26.7.0
+
+## Notes for the assignment
+
+- Each microservice owns its own database.
+- Donation Service stores `donorId` instead of creating a JPA relationship to User/Auth Service data.
+- Blood Stock and Blood Request use `bloodBankId` within the Blood Bank Service and validate that the referenced blood bank exists.
+- OAuth2 protects `Client -> Gateway` communication.
+- Service API keys protect `Gateway -> Microservice` communication.
+- Redis provides distributed rate-limit counters rather than a single in-memory map.
+- Dockerfiles use multi-stage builds: JDK for compilation and JRE for the final Java runtime image.
+
+Do not claim a test passed in the final report until it has been run successfully on the team's machine and the evidence has been captured.
