@@ -1,0 +1,114 @@
+{
+  "realm": "blood-donation",
+  "enabled": true,
+  "displayName": "Blood Donation",
+  "roles": {
+    "realm": [
+      {
+        "name": "DONOR"
+      },
+      {
+        "name": "BLOOD_BANK"
+      },
+      {
+        "name": "ADMIN"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "blood-donation-frontend",
+      "publicClient": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      },
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "basic",
+        "email"
+      ]
+    },
+    {
+      "clientId": "blood-donation-test-client",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "defaultClientScopes": [
+        "profile",
+        "roles",
+        "basic",
+        "email"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "donor1",
+      "enabled": true,
+      "email": "donor1@example.com",
+      "firstName": "Donor",
+      "lastName": "One",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "donor123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "DONOR"
+      ]
+    },
+    {
+      "username": "bank1",
+      "enabled": true,
+      "email": "bank1@example.com",
+      "firstName": "Blood",
+      "lastName": "Bank",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "bank123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "BLOOD_BANK"
+      ]
+    },
+    {
+      "username": "admin1",
+      "enabled": true,
+      "email": "admin1@example.com",
+      "firstName": "System",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN"
+      ]
+    }
+  ]
+}
