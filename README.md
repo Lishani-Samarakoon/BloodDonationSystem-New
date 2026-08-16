@@ -5,7 +5,19 @@ A **microservices-based Blood Donation Management System** developed using Sprin
 The system provides a centralized platform for managing users, blood donations, blood banks, blood stocks, and blood requests while applying authentication, API security, service routing, rate limiting, and containerized deployment.
 
 ---
+## Project Links
 
+| Resource | Link |
+|---|---|
+| GitHub Repository | [Blood Donation Management System](https://github.com/Lishani-Samarakoon/BloodDonationSystem-New) |
+| Frontend Application | [http://localhost:5173](http://localhost:5173) |
+| API Gateway | [http://localhost:8080](http://localhost:8080) |
+| Keycloak | [http://localhost:8180](http://localhost:8180) |
+| Auth Service Swagger | [http://localhost:8081/swagger-ui/index.html](http://localhost:8081/swagger-ui/index.html) |
+| Donation Service Swagger | [http://localhost:8082/swagger-ui/index.html](http://localhost:8082/swagger-ui/index.html) |
+| Blood Bank Service Swagger | [http://localhost:8083/swagger-ui/index.html](http://localhost:8083/swagger-ui/index.html) |
+
+----
 ## Team Members
 
 | Member | Index Number | Main Contribution |
