@@ -22,13 +22,24 @@ The system provides secure management of users, blood donations, blood banks, bl
 
 | Resource | Link |
 |---|---|
-| **GitHub Repository** | [Blood Donation Management System](https://github.com/Lishani-Samarakoon/BloodDonationSystem-New) |
-| **Frontend Application** | [http://localhost:5173](http://localhost:5173) |
-| **API Gateway** | [http://localhost:8080](http://localhost:8080) |
-| **Keycloak** | [http://localhost:8180](http://localhost:8180) |
-| **Auth Service Swagger** | [http://localhost:8081/swagger-ui.html](http://localhost:8081/swagger-ui.html) |
-| **Donation Service Swagger** | [http://localhost:8082/swagger-ui.html](http://localhost:8082/swagger-ui.html) |
-| **Blood Bank Service Swagger** | [http://localhost:8083/swagger-ui.html](http://localhost:8083/swagger-ui.html) |
+## Project Links
+
+| Resource | Link |
+|---|---|
+| GitHub Repository | [Blood Donation Management System](https://github.com/Lishani-Samarakoon/BloodDonationSystem-New) |
+
+### Local Development URLs
+
+| Service | Local URL |
+|---|---|
+| Frontend Application | `http://localhost:5173` |
+| API Gateway | `http://localhost:8080` |
+| Keycloak | `http://localhost:8180` |
+| Auth Service Swagger | `http://localhost:8081/swagger-ui.html` |
+| Donation Service Swagger | `http://localhost:8082/swagger-ui.html` |
+| Blood Bank Service Swagger | `http://localhost:8083/swagger-ui.html` |
+
+> **Note:** The URLs above are local development URLs. Clone the repository and run `docker compose up --build` before accessing them.
 
 > **Note:** The frontend, API Gateway, Keycloak, and Swagger links above are local development links. The Docker Compose environment must be running before accessing them.
 
