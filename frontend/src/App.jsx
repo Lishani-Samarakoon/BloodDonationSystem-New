@@ -81,9 +81,12 @@ function App() {
   const [requests, setRequests] = useState([])
 
   const [userForm, setUserForm] = useState(initialUser)
+  const [editingUserId, setEditingUserId] = useState(null)
   const [donationForm, setDonationForm] = useState(initialDonation)
   const [bankForm, setBankForm] = useState(initialBank)
+  const [editingBankId, setEditingBankId] = useState(null)
   const [stockForm, setStockForm] = useState(initialStock)
+  const [editingStockId, setEditingStockId] = useState(null)
   const [requestForm, setRequestForm] = useState(initialRequest)
 
   const canManageDonations =
@@ -693,20 +696,21 @@ function App() {
 
               withAction(
                 async () => {
-                  await apiFetch('/api/users', {
-                    method: 'POST',
+                  await apiFetch(editingUserId ? `/api/users/${editingUserId}` : '/api/users', {
+                    method: editingUserId ? 'PUT' : 'POST',
                     body: JSON.stringify(userForm),
                   })
 
                   setUserForm(initialUser)
+                  setEditingUserId(null)
                 },
-                'User profile created.'
+                editingUserId ? 'User profile updated.' : 'User profile created.'
               )
             }}
           >
 
             <h2>
-              Create user profile
+              {editingUserId ? 'Update user profile' : 'Create user profile'}
             </h2>
 
             <Field label="Full name">
@@ -803,7 +807,7 @@ function App() {
               className="primary-btn"
               disabled={busy}
             >
-              Create profile
+              {editingUserId ? 'Update profile' : 'Create profile'}
             </button>
 
           </form>
@@ -867,6 +871,26 @@ function App() {
                         </td>
 
                         <td>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUserForm({
+                                  name: user.name || '',
+                                  email: user.email || '',
+                                  bloodGroup: user.bloodGroup || '',
+                                  phone: user.phone || '',
+                                  city: user.city || '',
+                                  role: user.role || 'DONOR',
+                                })
+                                setEditingUserId(user.id)
+                                window.scrollTo({ top: 0, behavior: 'smooth' })
+                              }}
+                            >
+                              Edit
+                            </button>
+                          )}
+
                           {isAdmin && (
                             <button
                               className="text-danger"
@@ -1154,20 +1178,21 @@ function App() {
 
               withAction(
                 async () => {
-                  await apiFetch('/api/bloodbanks', {
-                    method: 'POST',
+                  await apiFetch(editingBankId ? `/api/bloodbanks/${editingBankId}` : '/api/bloodbanks', {
+                    method: editingBankId ? 'PUT' : 'POST',
                     body: JSON.stringify(bankForm),
                   })
 
                   setBankForm(initialBank)
+                  setEditingBankId(null)
                 },
-                'Blood bank created.'
+                editingBankId ? 'Blood bank updated.' : 'Blood bank created.'
               )
             }}
           >
 
             <h2>
-              Create blood bank
+              {editingBankId ? 'Update blood bank' : 'Create blood bank'}
             </h2>
 
             {!canManageBanks && (
@@ -1232,7 +1257,7 @@ function App() {
               className="primary-btn"
               disabled={busy || !canManageBanks}
             >
-              Create blood bank
+              {editingBankId ? 'Update blood bank' : 'Create blood bank'}
             </button>
 
           </form>
@@ -1283,6 +1308,24 @@ function App() {
 
                     {canManageBanks && (
                       <button
+                        type="button"
+                        onClick={() => {
+                          setBankForm({
+                            name: bank.name || '',
+                            address: bank.address || '',
+                            city: bank.city || '',
+                            phone: bank.phone || '',
+                          })
+                          setEditingBankId(bank.id)
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }}
+                      >
+                        Edit
+                      </button>
+                    )}
+
+                    {canManageBanks && (
+                      <button
                         className="text-danger"
                         type="button"
                         onClick={() =>
@@ -1327,8 +1370,8 @@ function App() {
 
               withAction(
                 async () => {
-                  await apiFetch('/api/bloodstocks', {
-                    method: 'POST',
+                  await apiFetch(editingStockId ? `/api/bloodstocks/${editingStockId}` : '/api/bloodstocks', {
+                    method: editingStockId ? 'PUT' : 'POST',
 
                     body: JSON.stringify({
                       ...stockForm,
@@ -1338,14 +1381,15 @@ function App() {
                   })
 
                   setStockForm(initialStock)
+                  setEditingStockId(null)
                 },
-                'Blood stock created.'
+                editingStockId ? 'Blood stock updated.' : 'Blood stock created.'
               )
             }}
           >
 
             <h2>
-              Add blood stock
+              {editingStockId ? 'Update blood stock' : 'Add blood stock'}
             </h2>
 
             {!canManageBanks && (
@@ -1480,6 +1524,23 @@ function App() {
                         </td>
 
                         <td>
+                          {canManageBanks && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setStockForm({
+                                  bloodBankId: String(stock.bloodBankId || ''),
+                                  bloodGroup: stock.bloodGroup || '',
+                                  quantityUnits: String(stock.quantityUnits || ''),
+                                })
+                                setEditingStockId(stock.id)
+                                window.scrollTo({ top: 0, behavior: 'smooth' })
+                              }}
+                            >
+                              Edit
+                            </button>
+                          )}
+
                           {canManageBanks && (
                             <button
                               className="text-danger"
