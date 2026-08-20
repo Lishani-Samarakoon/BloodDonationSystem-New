@@ -1,0 +1,28 @@
+# ---------------------------------------------------------
+# Maven generated build folders
+# ---------------------------------------------------------
+
+# Ignore target folders inside every microservice.
+**/target/
+
+
+# ---------------------------------------------------------
+# VS Code
+# ---------------------------------------------------------
+
+# Ignore local VS Code settings.
+.vscode/
+
+
+# ---------------------------------------------------------
+# IntelliJ IDEA
+# ---------------------------------------------------------
+
+# Ignore local IntelliJ settings.
+.idea/
+# Local environment secrets
+.env
+
+# Frontend generated/dependency folders
+frontend/node_modules/
+frontend/dist/
